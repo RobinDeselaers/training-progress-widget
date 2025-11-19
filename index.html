@@ -37,15 +37,20 @@
       color: var(--text-main);
     }
 
+    /* FULL-WIDTH CONTAINER */
     .widget-shell {
       width: 100%;
-      max-width: 420px;
+      max-width: 100%;
       background: transparent;
+      /* If embedded in Staffbase and you want to “eat” container padding, uncomment:
+      margin-left: -12px;
+      margin-right: -12px;
+      */
     }
 
     .widget-card {
       background: var(--card-bg);
-      border-radius: 24px;
+      border-radius: 20px; /* slightly less round, closer to your screenshot */
       box-shadow: var(--shadow-soft);
       padding: 20px 18px;
     }
@@ -259,10 +264,15 @@
     }
 
     @media (max-width: 480px) {
+      body {
+        padding: 16px;
+      }
+
       .widget-card {
         border-radius: 18px;
         padding: 18px 14px;
       }
+
       .course-title {
         font-size: 15px;
       }
@@ -301,8 +311,8 @@
         estimated: "2 hours estimated",
         due: "Feb 15, 2025",
         icon: "🦺",
-        status: 0,
-        isNew: true,
+        status: 100,
+        isNew: false,
         description:
           "Learn the core principles of workplace safety, risk assessment, and reporting unsafe conditions."
       },
@@ -312,7 +322,7 @@
         estimated: "30 minutes remaining",
         due: "Jan 30, 2025",
         icon: "🥦",
-        status: 75,
+        status: 85,
         isNew: false,
         description:
           "Covers handling, storage, and preparation guidelines to keep food safe and compliant with regulations."
