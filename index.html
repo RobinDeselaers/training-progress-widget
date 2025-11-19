@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Training Progress Widget</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <style>
+    :root {
+      --bg: #f5f6fb;
+      --card-bg: #ffffff;
+      --text-main: #111827;
+      --text-muted: #6b7280;
+      --accent: #0b3b91;
+      --accent-soft: #e5ebff;
+      --badge-bg: #eef2ff;
+      --border-radius-lg: 16px;
+      --border-radius-md: 12px;
+      --shadow-soft: 0 10px 25px rgba(15, 23, 42, 0.08);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "SF Pro Text",
+        "Segoe UI", sans-serif;
+    }
+
+    body {
+      min-height: 100vh;
+      background: radial-gradient(circle at top left, #e5ebff 0, #f5f6fb 45%, #ffffff 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+      color: var(--text-main);
+    }
+
+    .widget-shell {
+      width: 100%;
+      max-width: 420px;
+      background: transparent;
+    }
+
+    .widget-card {
+      background: var(--card-bg);
+      border-radius: 24px;
+      box-shadow: var(--shadow-soft);
+      padding: 20px 18px;
+    }
+
+    .widget-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 16px;
+    }
+
+    .widget-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.01em;
+    }
+
+    .widget-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+    }
+
+    .progress-bar-wrapper {
+      margin-top: 10px;
+      margin-bottom: 6px;
+      background: #e5e7eb;
+      border-radius: 999px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #1d4ed8, #0b3b91);
+      border-radius: inherit;
+      transition: width 0.6s ease-out;
+    }
+
+    .progress-label {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--text-muted);
+    }
+
+    /* Courses list */
+    .course-list {
+      margin-top: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .course-card {
+      position: relative;
+      border-radius: var(--border-radius-md);
+      border: 1px solid #e5e7eb;
+      padding: 14px 13px 14px 13px;
+      background: #f9fafb;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      cursor: pointer;
+      transition: box-shadow 0.15s ease, transform 0.15s ease,
+        background 0.15s ease;
+    }
+
+    .course-card.primary {
+      background: #ffffff;
+      border: 1px solid #d8def8;
+      box-shadow: 0 8px 16px rgba(15, 23, 42, 0.06);
+    }
+
+    .course-card:hover {
+      box-shadow: 0 8px 18px rgba(15, 23, 42, 0.08);
+      transform: translateY(-1px);
+      background: #ffffff;
+    }
+
+    .course-top-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 8px;
+      margin-bottom: 4px;
+    }
+
+    .course-title {
+      font-size: 16px;
+      font-weight: 600;
+      line-height: 1.25;
+    }
+
+    .pill {
+      border-radius: 999px;
+      padding: 4px 10px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--badge-bg);
+      color: #1d4ed8;
+      white-space: nowrap;
+    }
+
+    .pill.new {
+      background: #f97316;
+      color: white;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 600;
+      padding: 3px 9px;
+    }
+
+    .pill.clickable {
+      cursor: pointer;
+      user-select: none;
+    }
+
+    .pill.clickable:hover {
+      background: #dce4ff;
+    }
+
+    .course-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 12px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    .meta-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .meta-icon {
+      font-size: 13px;
+    }
+
+    /* Expandable details */
+    .course-details {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 13px;
+      color: var(--text-muted);
+      display: none;
+    }
+
+    .course-card.open .course-details {
+      display: block;
+    }
+
+    .course-details p {
+      margin-bottom: 6px;
+      line-height: 1.4;
+    }
+
+    .details-progress-label {
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+
+    .details-progress-bar {
+      width: 100%;
+      background: #e5e7eb;
+      border-radius: 999px;
+      height: 6px;
+      overflow: hidden;
+      margin-bottom: 8px;
+    }
+
+    .details-progress-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #1d4ed8, #0b3b91);
+    }
+
+    .complete-btn {
+      margin-top: 2px;
+      background: #1d4ed8;
+      color: white;
+      border: none;
+      padding: 7px 11px;
+      border-radius: 8px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .complete-btn:hover {
+      background: #0b3b91;
+    }
+
+    .footer-link {
+      margin-top: 12px;
+      font-size: 13px;
+      color: #1d4ed8;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+    }
+
+    .footer-link::after {
+      content: "›";
+      font-size: 14px;
+      transform: translateY(0.5px);
+    }
+
+    @media (max-width: 480px) {
+      .widget-card {
+        border-radius: 18px;
+        padding: 18px 14px;
+      }
+      .course-title {
+        font-size: 15px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="widget-shell">
+    <div class="widget-card">
+      <div class="widget-header">
+        <div>
+          <div class="widget-title">Overall Progress</div>
+          <div class="widget-subtitle" id="active-courses-label">0 Active Courses</div>
+        </div>
+      </div>
+
+      <div class="progress-bar-wrapper">
+        <div class="progress-bar-fill" id="overall-progress-bar"></div>
+      </div>
+      <div class="progress-label" id="overall-progress-label">0% Completed</div>
+
+      <div class="course-list" id="course-list">
+        <!-- JS will inject course cards here -->
+      </div>
+
+      <div class="footer-link">View All Courses</div>
+    </div>
+  </div>
+
+  <script>
+    // --- Mock data ---------------------------------------------------------
+    const courses = [
+      {
+        id: 1,
+        title: "Workplace Safety Fundamentals",
+        estimated: "2 hours estimated",
+        due: "Feb 15, 2025",
+        icon: "🦺",
+        status: 0,
+        isNew: true,
+        description:
+          "Learn the core principles of workplace safety, risk assessment, and reporting unsafe conditions."
+      },
+      {
+        id: 2,
+        title: "Food Safety & Hygiene",
+        estimated: "30 minutes remaining",
+        due: "Jan 30, 2025",
+        icon: "🥦",
+        status: 75,
+        isNew: false,
+        description:
+          "Covers handling, storage, and preparation guidelines to keep food safe and compliant with regulations."
+      },
+      {
+        id: 3,
+        title: "Compliance Training Curriculum",
+        estimated: "3 hours remaining",
+        due: "Mar 20, 2025",
+        icon: "🛡️",
+        status: 45,
+        isNew: false,
+        description:
+          "A bundled set of compliance modules for data protection, ethics, and workplace conduct."
+      }
+    ];
+
+    const listEl = document.getElementById("course-list");
+    const activeLabelEl = document.getElementById("active-courses-label");
+    const progressBarEl = document.getElementById("overall-progress-bar");
+    const progressLabelEl = document.getElementById("overall-progress-label");
+
+    function renderCourses() {
+      // Overall label
+      activeLabelEl.textContent = `${courses.length} Active Courses`;
+
+      // Overall progress
+      const avgProgress =
+        courses.reduce((sum, c) => sum + c.status, 0) / courses.length;
+      const overall = Math.round(avgProgress) || 0;
+      progressBarEl.style.width = overall + "%";
+      progressLabelEl.textContent = `${overall}% Completed`;
+
+      // Courses
+      listEl.innerHTML = "";
+
+      courses.forEach((course, index) => {
+        const card = document.createElement("div");
+        card.className = "course-card" + (index === 0 ? " primary" : "");
+        card.dataset.courseId = course.id;
+
+        // Toggle open/close when card itself is clicked
+        card.addEventListener("click", () => {
+          card.classList.toggle("open");
+          updateDetailsProgress(card, course.status);
+        });
+
+        const topRow = document.createElement("div");
+        topRow.className = "course-top-row";
+
+        const title = document.createElement("div");
+        title.className = "course-title";
+        title.textContent = course.title;
+
+        const rightPill = document.createElement("div");
+
+        if (course.isNew) {
+          rightPill.className = "pill new";
+          rightPill.textContent = "New";
+        } else {
+          rightPill.className = "pill clickable";
+          rightPill.textContent = `${course.status}% Done`;
+
+          // Click-to-increase progress
+          rightPill.addEventListener("click", (e) => {
+            e.stopPropagation(); // don’t toggle accordion
+            course.status = Math.min(100, course.status + 10);
+            renderCourses();
+          });
+        }
+
+        topRow.appendChild(title);
+        topRow.appendChild(rightPill);
+        card.appendChild(topRow);
+
+        const metaRow = document.createElement("div");
+        metaRow.className = "course-meta";
+
+        const est = document.createElement("div");
+        est.className = "meta-item";
+        est.innerHTML = `<span class="meta-icon">${course.icon}</span>${course.estimated}`;
+
+        const due = document.createElement("div");
+        due.className = "meta-item";
+        due.innerHTML = `<span class="meta-icon">📅</span>Due: ${course.due}`;
+
+        metaRow.appendChild(est);
+        metaRow.appendChild(due);
+        card.appendChild(metaRow);
+
+        // Details section
+        const details = document.createElement("div");
+        details.className = "course-details";
+        details.innerHTML = `
+          <p>${course.description}</p>
+          <div class="details-progress-label">
+            Current progress: <strong>${course.status}%</strong>
+          </div>
+          <div class="details-progress-bar">
+            <div class="details-progress-fill" style="width: ${course.status}%;"></div>
+          </div>
+          <button class="complete-btn">Mark as Complete</button>
+        `;
+        card.appendChild(details);
+
+        // Mark-as-complete button
+        const completeBtn = details.querySelector(".complete-btn");
+        completeBtn.addEventListener("click", (e) => {
+          e.stopPropagation(); // don’t toggle accordion
+          course.status = 100;
+          course.isNew = false;
+          renderCourses();
+        });
+
+        listEl.appendChild(card);
+      });
+    }
+
+    function updateDetailsProgress(cardEl, status) {
+      const fill = cardEl.querySelector(".details-progress-fill");
+      const label = cardEl.querySelector(".details-progress-label strong");
+      if (fill && label) {
+        fill.style.width = status + "%";
+        label.textContent = status + "%";
+      }
+    }
+
+    renderCourses();
+  </script>
+</body>
+</html>
