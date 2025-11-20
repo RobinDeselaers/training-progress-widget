@@ -37,12 +37,11 @@
       color: var(--text-main);
     }
 
-    /* FULL-WIDTH CONTAINER */
     .widget-shell {
       width: 100%;
       max-width: 100%;
       background: transparent;
-      /* If embedded in Staffbase and you want to “eat” container padding, you can try:
+      /* If Staffbase adds padding and you want edge-to-edge, try:
       margin-left: -12px;
       margin-right: -12px;
       */
@@ -96,7 +95,6 @@
       color: var(--text-muted);
     }
 
-    /* Courses list */
     .course-list {
       margin-top: 18px;
       display: flex;
@@ -108,7 +106,7 @@
       position: relative;
       border-radius: var(--border-radius-md);
       border: 1px solid #e5e7eb;
-      padding: 14px 13px 14px 13px;
+      padding: 14px 13px;
       background: #f9fafb;
       display: flex;
       flex-direction: column;
@@ -157,9 +155,6 @@
     .pill.new {
       background: #f97316;
       color: white;
-      border-radius: 999px;
-      font-size: 11px;
-      font-weight: 600;
       padding: 3px 9px;
     }
 
@@ -357,15 +352,13 @@
       </div>
       <div class="progress-label" id="overall-progress-label">0% Completed</div>
 
-      <div class="course-list" id="course-list">
-        <!-- JS injects course cards -->
-      </div>
+      <div class="course-list" id="course-list"></div>
 
       <div class="footer-link">View All Courses</div>
     </div>
   </div>
 
-  <!-- Fake "child browser" overlay for courses without a real URL -->
+  <!-- Fake "child browser" overlay -->
   <div class="overlay-root" id="course-overlay">
     <div class="overlay-backdrop"></div>
     <div class="overlay-content">
@@ -410,9 +403,9 @@
   </div>
 
   <script>
-    // --- Mock data ---------------------------------------------------------
-    // Set 'url' to a real Cornerstone deep link or https URL to open it
-    // in the Staffbase child browser. Leave it null to use the fake overlay.
+    // 1) Configure Cornerstone deep links here.
+    //    Use your real SSO/deep-link URLs from Cornerstone admin.
+    //    If a course has url:null it will use the fake overlay instead.
     const courses = [
       {
         id: 1,
@@ -424,7 +417,8 @@
         isNew: false,
         description:
           "Learn the core principles of workplace safety, risk assessment, and reporting unsafe conditions.",
-        url: "https://cornerstone.yourcompany.com/course/123"
+        url: null
+        // example: "https://yourcornerstone.csod.com/LMS/catalog/LaunchTraining.aspx?TrainingId=12345"
       },
       {
         id: 2,
@@ -470,18 +464,41 @@
 
     let currentCourse = null;
 
+    // 2) Helper: try to open a URL in a way that Staffbase / OS can intercept.
+    function openExternal(url) {
+      if (!url) return;
+
+      try {
+        // Preferred: invisible anchor with target=_blank (often triggers in-app browser)
+        const a = document.createElement("a");
+        a.href = url;
+        a.target = "_blank";
+        a.rel = "noopener noreferrer";
+        a.style.display = "none";
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } catch (e) {
+        console.warn("anchor open failed, falling back", e);
+        // Fallback: navigate top frame (Staffbase may still catch this)
+        try {
+          window.top.location.href = url;
+        } catch (err) {
+          console.warn("top.location fallback failed", err);
+          window.location.href = url;
+        }
+      }
+    }
+
     function renderCourses() {
-      // Overall label
       activeLabelEl.textContent = `${courses.length} Active Courses`;
 
-      // Overall progress
       const avgProgress =
         courses.reduce((sum, c) => sum + c.status, 0) / courses.length;
       const overall = Math.round(avgProgress) || 0;
       progressBarEl.style.width = overall + "%";
       progressLabelEl.textContent = `${overall}% Completed`;
 
-      // Courses
       listEl.innerHTML = "";
 
       courses.forEach((course, index) => {
@@ -489,7 +506,7 @@
         card.className = "course-card" + (index === 0 ? " primary" : "");
         card.dataset.courseId = course.id;
 
-        // Main click -> open course (deep link or fake overlay)
+        // Main click – deep link or fake overlay
         card.addEventListener("click", () => openCourse(course));
 
         const topRow = document.createElement("div");
@@ -507,9 +524,8 @@
           rightPill.className = "pill clickable";
           rightPill.textContent = `${course.status}% Done`;
 
-          // Click-to-increase progress by 10%
           rightPill.addEventListener("click", (e) => {
-            e.stopPropagation(); // don’t trigger openCourse()
+            e.stopPropagation(); // don’t open course
             course.status = Math.min(100, course.status + 10);
             renderCourses();
           });
@@ -539,17 +555,13 @@
     }
 
     function openCourse(course) {
-      // If a real URL is configured, open in child browser (Staffbase will handle it)
+      // If you configured a Cornerstone deep link, use that.
       if (course.url) {
-        try {
-          window.open(course.url, "_blank");
-        } catch (e) {
-          console.warn("Unable to open course URL", e);
-        }
+        openExternal(course.url);
         return;
       }
 
-      // Otherwise, show the fake in-widget course overlay
+      // Otherwise, use fake in-widget training overlay.
       currentCourse = course;
       overlayTitle.textContent = course.title;
       overlayTagline.textContent = course.estimated + " • Training preview";
@@ -566,7 +578,6 @@
       currentCourse = null;
     }
 
-    // Complete from overlay -> set 100%, rerender widget
     overlayCompleteBtn.addEventListener("click", () => {
       if (!currentCourse) return;
       currentCourse.status = 100;
