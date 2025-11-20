@@ -42,7 +42,7 @@
       width: 100%;
       max-width: 100%;
       background: transparent;
-      /* If embedded in Staffbase and you want to “eat” container padding, uncomment:
+      /* If embedded in Staffbase and you want to “eat” container padding, you can try:
       margin-left: -12px;
       margin-right: -12px;
       */
@@ -50,7 +50,7 @@
 
     .widget-card {
       background: var(--card-bg);
-      border-radius: 20px; /* slightly less round, closer to your screenshot */
+      border-radius: 20px;
       box-shadow: var(--shadow-soft);
       padding: 20px 18px;
     }
@@ -191,61 +191,6 @@
       font-size: 13px;
     }
 
-    /* Expandable details */
-    .course-details {
-      margin-top: 10px;
-      padding-top: 10px;
-      border-top: 1px solid #e5e7eb;
-      font-size: 13px;
-      color: var(--text-muted);
-      display: none;
-    }
-
-    .course-card.open .course-details {
-      display: block;
-    }
-
-    .course-details p {
-      margin-bottom: 6px;
-      line-height: 1.4;
-    }
-
-    .details-progress-label {
-      font-size: 12px;
-      margin-bottom: 6px;
-    }
-
-    .details-progress-bar {
-      width: 100%;
-      background: #e5e7eb;
-      border-radius: 999px;
-      height: 6px;
-      overflow: hidden;
-      margin-bottom: 8px;
-    }
-
-    .details-progress-fill {
-      height: 100%;
-      width: 0;
-      background: linear-gradient(90deg, #1d4ed8, #0b3b91);
-    }
-
-    .complete-btn {
-      margin-top: 2px;
-      background: #1d4ed8;
-      color: white;
-      border: none;
-      padding: 7px 11px;
-      border-radius: 8px;
-      font-size: 13px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .complete-btn:hover {
-      background: #0b3b91;
-    }
-
     .footer-link {
       margin-top: 12px;
       font-size: 13px;
@@ -263,6 +208,123 @@
       transform: translateY(0.5px);
     }
 
+    /* Overlay fake course "child browser" */
+    .overlay-root {
+      position: fixed;
+      inset: 0;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .overlay-root.active {
+      display: flex;
+    }
+
+    .overlay-backdrop {
+      position: absolute;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.45);
+    }
+
+    .overlay-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 480px;
+      max-height: 90vh;
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 20px 40px rgba(15, 23, 42, 0.35);
+      padding: 18px 18px 16px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .overlay-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .overlay-title {
+      font-size: 17px;
+      font-weight: 600;
+    }
+
+    .overlay-close {
+      border: none;
+      background: transparent;
+      font-size: 22px;
+      line-height: 1;
+      cursor: pointer;
+    }
+
+    .overlay-body {
+      font-size: 14px;
+      color: var(--text-muted);
+      overflow-y: auto;
+      padding-right: 4px;
+      margin-bottom: 10px;
+    }
+
+    .overlay-tagline {
+      font-size: 13px;
+      margin-bottom: 8px;
+    }
+
+    .overlay-section-title {
+      font-size: 13px;
+      font-weight: 600;
+      margin-top: 12px;
+      margin-bottom: 6px;
+      color: var(--text-main);
+    }
+
+    .overlay-progress-bar {
+      width: 100%;
+      background: #e5e7eb;
+      border-radius: 999px;
+      height: 8px;
+      overflow: hidden;
+      margin-top: 4px;
+      margin-bottom: 12px;
+    }
+
+    .overlay-progress-fill {
+      height: 100%;
+      width: 0;
+      background: linear-gradient(90deg, #22c55e, #15803d);
+    }
+
+    .overlay-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      margin-top: auto;
+      padding-top: 8px;
+      border-top: 1px solid #e5e7eb;
+      font-size: 13px;
+    }
+
+    .primary-btn {
+      background: #1d4ed8;
+      color: #ffffff;
+      border-radius: 999px;
+      border: none;
+      font-size: 14px;
+      padding: 8px 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+
+    .primary-btn:hover {
+      background: #0b3b91;
+    }
+
     @media (max-width: 480px) {
       body {
         padding: 16px;
@@ -273,8 +335,9 @@
         padding: 18px 14px;
       }
 
-      .course-title {
-        font-size: 15px;
+      .overlay-content {
+        max-width: 100%;
+        margin: 0 10px;
       }
     }
   </style>
@@ -295,15 +358,61 @@
       <div class="progress-label" id="overall-progress-label">0% Completed</div>
 
       <div class="course-list" id="course-list">
-        <!-- JS will inject course cards here -->
+        <!-- JS injects course cards -->
       </div>
 
       <div class="footer-link">View All Courses</div>
     </div>
   </div>
 
+  <!-- Fake "child browser" overlay for courses without a real URL -->
+  <div class="overlay-root" id="course-overlay">
+    <div class="overlay-backdrop"></div>
+    <div class="overlay-content">
+      <div class="overlay-header">
+        <div class="overlay-title" id="overlay-title">Course Title</div>
+        <button class="overlay-close" id="overlay-close">&times;</button>
+      </div>
+      <div class="overlay-body">
+        <div class="overlay-tagline" id="overlay-tagline">
+          Interactive training module preview.
+        </div>
+
+        <div class="overlay-section-title">Overview</div>
+        <p id="overlay-description">
+          This is where a fake training course description goes. In production
+          you would deep link into Cornerstone instead.
+        </p>
+
+        <div class="overlay-section-title">
+          Progress
+          <span id="overlay-progress-label" style="font-weight:400; margin-left:4px;">0% complete</span>
+        </div>
+        <div class="overlay-progress-bar">
+          <div class="overlay-progress-fill" id="overlay-progress-fill"></div>
+        </div>
+
+        <div class="overlay-section-title">Objectives</div>
+        <ul style="padding-left: 18px; margin-top: 2px;">
+          <li>Understand the key concepts of this topic</li>
+          <li>Complete at least 3 practical scenarios</li>
+          <li>Pass the final knowledge check</li>
+        </ul>
+      </div>
+
+      <div class="overlay-footer">
+        <span id="overlay-duration">Approx. 20–30 minutes</span>
+        <button class="primary-btn" id="overlay-complete-btn">
+          Complete Course
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     // --- Mock data ---------------------------------------------------------
+    // Set 'url' to a real Cornerstone deep link or https URL to open it
+    // in the Staffbase child browser. Leave it null to use the fake overlay.
     const courses = [
       {
         id: 1,
@@ -314,7 +423,8 @@
         status: 100,
         isNew: false,
         description:
-          "Learn the core principles of workplace safety, risk assessment, and reporting unsafe conditions."
+          "Learn the core principles of workplace safety, risk assessment, and reporting unsafe conditions.",
+        url: null // e.g. "https://cornerstone.yourcompany.com/course/123"
       },
       {
         id: 2,
@@ -325,7 +435,8 @@
         status: 85,
         isNew: false,
         description:
-          "Covers handling, storage, and preparation guidelines to keep food safe and compliant with regulations."
+          "Covers handling, storage, and preparation guidelines to keep food safe and compliant with regulations.",
+        url: null
       },
       {
         id: 3,
@@ -336,7 +447,8 @@
         status: 45,
         isNew: false,
         description:
-          "A bundled set of compliance modules for data protection, ethics, and workplace conduct."
+          "A bundled set of compliance modules for data protection, ethics, and workplace conduct.",
+        url: null
       }
     ];
 
@@ -344,6 +456,19 @@
     const activeLabelEl = document.getElementById("active-courses-label");
     const progressBarEl = document.getElementById("overall-progress-bar");
     const progressLabelEl = document.getElementById("overall-progress-label");
+
+    // Overlay elements
+    const overlayRoot = document.getElementById("course-overlay");
+    const overlayTitle = document.getElementById("overlay-title");
+    const overlayTagline = document.getElementById("overlay-tagline");
+    const overlayDescription = document.getElementById("overlay-description");
+    const overlayProgressFill = document.getElementById("overlay-progress-fill");
+    const overlayProgressLabel = document.getElementById("overlay-progress-label");
+    const overlayDuration = document.getElementById("overlay-duration");
+    const overlayCloseBtn = document.getElementById("overlay-close");
+    const overlayCompleteBtn = document.getElementById("overlay-complete-btn");
+
+    let currentCourse = null;
 
     function renderCourses() {
       // Overall label
@@ -364,11 +489,8 @@
         card.className = "course-card" + (index === 0 ? " primary" : "");
         card.dataset.courseId = course.id;
 
-        // Toggle open/close when card itself is clicked
-        card.addEventListener("click", () => {
-          card.classList.toggle("open");
-          updateDetailsProgress(card, course.status);
-        });
+        // Main click -> open course (deep link or fake overlay)
+        card.addEventListener("click", () => openCourse(course));
 
         const topRow = document.createElement("div");
         topRow.className = "course-top-row";
@@ -378,7 +500,6 @@
         title.textContent = course.title;
 
         const rightPill = document.createElement("div");
-
         if (course.isNew) {
           rightPill.className = "pill new";
           rightPill.textContent = "New";
@@ -386,9 +507,9 @@
           rightPill.className = "pill clickable";
           rightPill.textContent = `${course.status}% Done`;
 
-          // Click-to-increase progress
+          // Click-to-increase progress by 10%
           rightPill.addEventListener("click", (e) => {
-            e.stopPropagation(); // don’t toggle accordion
+            e.stopPropagation(); // don’t trigger openCourse()
             course.status = Math.min(100, course.status + 10);
             renderCourses();
           });
@@ -413,42 +534,49 @@
         metaRow.appendChild(due);
         card.appendChild(metaRow);
 
-        // Details section
-        const details = document.createElement("div");
-        details.className = "course-details";
-        details.innerHTML = `
-          <p>${course.description}</p>
-          <div class="details-progress-label">
-            Current progress: <strong>${course.status}%</strong>
-          </div>
-          <div class="details-progress-bar">
-            <div class="details-progress-fill" style="width: ${course.status}%;"></div>
-          </div>
-          <button class="complete-btn">Mark as Complete</button>
-        `;
-        card.appendChild(details);
-
-        // Mark-as-complete button
-        const completeBtn = details.querySelector(".complete-btn");
-        completeBtn.addEventListener("click", (e) => {
-          e.stopPropagation(); // don’t toggle accordion
-          course.status = 100;
-          course.isNew = false;
-          renderCourses();
-        });
-
         listEl.appendChild(card);
       });
     }
 
-    function updateDetailsProgress(cardEl, status) {
-      const fill = cardEl.querySelector(".details-progress-fill");
-      const label = cardEl.querySelector(".details-progress-label strong");
-      if (fill && label) {
-        fill.style.width = status + "%";
-        label.textContent = status + "%";
+    function openCourse(course) {
+      // If a real URL is configured, open in child browser (Staffbase will handle it)
+      if (course.url) {
+        try {
+          window.open(course.url, "_blank");
+        } catch (e) {
+          console.warn("Unable to open course URL", e);
+        }
+        return;
       }
+
+      // Otherwise, show the fake in-widget course overlay
+      currentCourse = course;
+      overlayTitle.textContent = course.title;
+      overlayTagline.textContent = course.estimated + " • Training preview";
+      overlayDescription.textContent = course.description;
+      overlayProgressFill.style.width = course.status + "%";
+      overlayProgressLabel.textContent = `${course.status}% complete`;
+      overlayDuration.textContent = course.estimated || "Approx. 20–30 minutes";
+
+      overlayRoot.classList.add("active");
     }
+
+    function closeOverlay() {
+      overlayRoot.classList.remove("active");
+      currentCourse = null;
+    }
+
+    // Complete from overlay -> set 100%, rerender widget
+    overlayCompleteBtn.addEventListener("click", () => {
+      if (!currentCourse) return;
+      currentCourse.status = 100;
+      currentCourse.isNew = false;
+      renderCourses();
+      closeOverlay();
+    });
+
+    overlayCloseBtn.addEventListener("click", closeOverlay);
+    overlayRoot.querySelector(".overlay-backdrop").addEventListener("click", closeOverlay);
 
     renderCourses();
   </script>
